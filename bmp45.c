@@ -60,7 +60,7 @@ void printhistogram(int *arr, float max){
 
 
 //troche bez sensu zrobilam bo potrzebujemy potem tych tablic r g b
-void histogram(FILE *fp, BITMAPFILEHEADER *fh, BITMAPINFOHEADER *ih, int rowlength){
+void histogram(int *red, int *green, int *blue, FILE *fp, BITMAPFILEHEADER *fh, BITMAPINFOHEADER *ih, int rowlength){
     if(ih->biCompression != 0 || ih->biBitCount != 24){
         printf("\nhistogram calculation is unsupported");
         return;
@@ -69,10 +69,6 @@ void histogram(FILE *fp, BITMAPFILEHEADER *fh, BITMAPINFOHEADER *ih, int rowleng
     uint8_t r;
     uint8_t g;
     uint8_t b;
-
-    int red[16] = { 0 };
-    int green[16] = { 0 };
-    int blue[16] = { 0 };
 
     for(int j = 0; j < ih->biHeight; j++){
         for(int i = 0; i < rowlength; i += 3){
@@ -96,7 +92,7 @@ void histogram(FILE *fp, BITMAPFILEHEADER *fh, BITMAPINFOHEADER *ih, int rowleng
 
 }
 
-//cos nie styka
+//cos nie styka, format niby git ale plik sie nie otwiera
 void tograyscale(int *red, int *green, int *blue, char *filename, BITMAPFILEHEADER *fh, BITMAPINFOHEADER *ih, int rowlength){
     FILE *fp = fopen(filename, "wb");
     if(!fp) {
@@ -124,15 +120,17 @@ void tograyscale(int *red, int *green, int *blue, char *filename, BITMAPFILEHEAD
 
 
     uint8_t gray;
+    //uint8_t padding = 0;
 
     for(int j = 0; j < ih->biHeight; j++){
         for(int i = 0; i < rowlength; i += 3){
             gray = (red[i] + green[i] + blue[i]) / 3;
-            printf("%d ", gray);
+            //printf("%d ", gray);
             fwrite(&gray, sizeof gray, 1, fp);
             fwrite(&gray, sizeof gray, 1, fp);
             fwrite(&gray, sizeof gray, 1, fp);
         }
+        //fwrite(padding, sizeof padding, 1, fp);
     }
 }
 
@@ -166,9 +164,13 @@ int main(){
     int rowlength = floor((ih.biBitCount * ih.biWidth + 31) / 32) * 4;
     //printf("%d", rowlength);
 
-    histogram(fp, &fh, &ih, rowlength);
+    int red[16] = { 0 };
+    int green[16] = { 0 };
+    int blue[16] = { 0 };
 
-    //tograyscale(red, green, blue, "graytux.bmp", &fh, &ih, rowlength);
+    histogram(red, green, blue, fp, &fh, &ih, rowlength);
+
+    tograyscale(red, green, blue, "sadtux.bmp", &fh, &ih, rowlength);
 
 
     fclose(fp);
