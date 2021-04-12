@@ -31,6 +31,7 @@ typedef struct tagBITMAPINFOHEADER {
   DWORD biClrImportant;
 } BITMAPINFOHEADER, *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
 
+//to nie dziala, jakies inne wartosci sie pokazywaly xd pewnie lepiej to zrobic ze wskaznikami itd.
 void readfile(BITMAPFILEHEADER fh, FILE *fp){
     fread(&fh.bfType, sizeof fh.bfType, 1, fp);
     fread(&fh.bfSize, sizeof fh.bfSize, 1, fp);
