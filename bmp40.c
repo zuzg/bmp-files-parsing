@@ -115,11 +115,11 @@ int main(){
         }
     }
     printf("\nRED\n");
-    printhistogram(red, 291.0);
+    printhistogram(red, rowlength);
     printf("\nGREEN\n");
-    printhistogram(green, 291.0);
+    printhistogram(green, rowlength);
     printf("\nBLUE\n");
-    printhistogram(blue, 291.0);
+    printhistogram(blue, rowlength);
 
 
     fclose(fp);
