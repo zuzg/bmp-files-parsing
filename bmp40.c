@@ -99,9 +99,10 @@ int main(){
     int red[16] = { 0 };
     int green[16] = { 0 };
     int blue[16] = { 0 };
-
+    
+    //hmm dla tuxa cos nie styka jednak, cos z rowlength jest nie tak
     for(int j = 0; j < ih.biHeight; j++){
-        for(int i = 0; i < 292; i += 3){
+        for(int i = 0; i < rowlength; i += 3){
             fread(&r, sizeof r, 1, fp);
             fread(&g, sizeof g, 1, fp);
             fread(&b, sizeof b, 1, fp);
