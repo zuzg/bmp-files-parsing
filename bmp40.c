@@ -120,7 +120,7 @@ int main(){
     printhistogram(green, 291.0);
     printf("\nBLUE\n");
     printhistogram(blue, 291.0);
-
+    //lbadlkgjaslha;skhjdf;aksfjh
 
     fclose(fp);
     return 0;
