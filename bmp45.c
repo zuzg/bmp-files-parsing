@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -132,6 +133,7 @@ void tograyscale(int *red, int *green, int *blue, char *filename, BITMAPFILEHEAD
         }
         //fwrite(padding, sizeof padding, 1, fp);
     }
+  fclose(fp);
 }
 
 int main(){
