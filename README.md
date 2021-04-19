@@ -1,8 +1,9 @@
-## yasss 4.5 działa!
+## yasss 4.5 działa! edit: prawie
 
 ![obraz](https://user-images.githubusercontent.com/81712088/115205916-55ff6080-a0fa-11eb-9112-5574922b1774.png)
 
 ### edit: ale histogram już nie, coś pomieszałam z tymi bitami, generalnie grzyb straszny xd
+### edit2: exp jest lepsze ale nie ogarnęłam jak ten padding działa do końca, przynajmnije histo jest ok
 
 # bmp-files-parsing
 uni project to parse bmp files<br>
