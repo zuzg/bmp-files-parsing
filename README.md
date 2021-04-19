@@ -1,4 +1,8 @@
-## jak coś to w 4.5 błąd jest taki że używam tablicy dla kolorów [16], czyli tej z której robię histogram XD a tam powinny być wszyskie bajty, czyli width x height. jutor będzie ogarniane
+## yasss 4.5 działa!
+
+![obraz](https://user-images.githubusercontent.com/81712088/115205916-55ff6080-a0fa-11eb-9112-5574922b1774.png)
+
+
 
 # bmp-files-parsing
 uni project to parse bmp files<br>
