@@ -1,8 +1,26 @@
 #include "header.h"
 
-int main() {
+///to wrzucamy zeby dzialalo w linuxie, roboczo do testow zostawilam chara
 
-    char * filename = "tux.bmp";
+/*
+int main(int argc, char **argv) {
+
+    char * filename = strtok(argv[1], " ");
+    char * fileout = strtok(NULL, " ");
+    char * hidetext = strtok(NULL, " ");
+*/
+///dalam ify zeby w zaleznosci od inputu robilo rozne rzeczy, generalnie jak ogarniemy strtoka to bedzie git
+
+int main() {
+    //idk o co chodzi
+    char argg[] = "tux.bmp output.bmp eluwina";
+    //printf("%s\n", argg);
+
+    char * filename = strtok(argg, " ");
+    char * fileout = strtok(NULL, " ");
+    char * hidetext = strtok(NULL, " ");
+
+    printf("%s %s %s\n", filename, fileout, hidetext);
 
     FILE* fp = fopen(filename, "rb");
     if (!fp) {
@@ -31,15 +49,23 @@ int main() {
     ImgCol.BLUE = (int*)calloc(el, sizeof(int));
 
     histogram(&ImgCol, fp, &fh, &ih, rowlength);
-    tograyscale(&ImgCol, "test.bmp", &fh, &ih, rowlength, offset);
 
-    char * text = "Milego poniedzialku ;pp";
-    steganography(text, filename, &ImgCol, &fh, &ih, offset);
-    printf("\nDecode steganography? [Y/N] ");
-    int ch = getc(stdin);
-    if (ch == 'Y' || ch == 'y')
-       decode();
+    if(fileout == NULL){
+        printf("Decode steganography? [Y/N] ");
+        int ch = getc(stdin);
+        if (ch == 'Y' || ch == 'y')
+            decode(filename);
+    }
 
+    else if(hidetext == NULL){
+    	//printf("XD0");
+        tograyscale(&ImgCol, fileout, &fh, &ih, rowlength, offset);
+    }
+
+    else{
+    	//printf("XD1");
+    	steganography(hidetext, fileout, &ImgCol, &fh, &ih, offset);
+    }
 
     free(ImgCol.RED);
     free(ImgCol.GREEN);
