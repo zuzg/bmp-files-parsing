@@ -34,6 +34,12 @@ typedef struct tagBITMAPINFOHEADER {
     DWORD biClrImportant;
 } BITMAPINFOHEADER, * LPBITMAPINFOHEADER, * PBITMAPINFOHEADER;
 
+typedef struct COLORS {
+    int* RED;
+    int* GREEN;
+    int* BLUE;
+} COLORS;
+
 void readfile(BITMAPFILEHEADER* fh, FILE* fp) {
     fread(&fh->bfType, sizeof fh->bfType, 1, fp);
     fread(&fh->bfSize, sizeof fh->bfSize, 1, fp);
@@ -75,7 +81,7 @@ void printhistogram(int* arr, float max) {
         printf("%u-%u: %.2f%%\n", i * 16, 16 * i + 15, arr[i] / max * 100);
 }
 
-void histogram(int* redB, int* greenB, int* blueB, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER* ih, int rowlength) {
+void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER* ih, int rowlength) {
     if (ih->biCompression != 0 || ih->biBitCount != 24) {
         printf("\nhistogram calculation is unsupported");
         return;
@@ -98,9 +104,9 @@ void histogram(int* redB, int* greenB, int* blueB, FILE* fp, BITMAPFILEHEADER* f
             fread(&b, sizeof b, 1, fp);
 
             //printf("%u %u %u ", r, g, b);
-            redB[k] = r;
-            greenB[k] = g;
-            blueB[k] = b;
+            ImgCol->RED[k] = r;
+            ImgCol->GREEN[k] = g;
+            ImgCol->BLUE[k] = b;
             //printf("%d %d %d\n", r, g, b);
             //printf("%d %d %d\n", redB[k], greenB[k], blueB[k]);
             k++;
@@ -120,7 +126,7 @@ void histogram(int* redB, int* greenB, int* blueB, FILE* fp, BITMAPFILEHEADER* f
 
 }
 
-void tograyscale(int* redB, int* greenB, int* blueB, char* filename, BITMAPFILEHEADER* fh, BITMAPINFOHEADER* ih, int rowlength, uint8_t * offset) {
+void tograyscale(COLORS * ImgCol, char* filename, BITMAPFILEHEADER* fh, BITMAPINFOHEADER* ih, int rowlength, uint8_t * offset) {
     FILE* fp = fopen(filename, "wb");
     if (!fp) {
         perror("File opening failed");
@@ -152,7 +158,7 @@ void tograyscale(int* redB, int* greenB, int* blueB, char* filename, BITMAPFILEH
 
     for (int j = 0; j < ih->biHeight; j++) {
         for (int i = 0; i < ih->biWidth; i ++) {
-            gray = (redB[k] + greenB[k] + blueB[k]) / 3;
+            gray = (ImgCol->RED[k] + ImgCol->GREEN[k] + ImgCol->BLUE[k]) / 3;
             //gray = (uint8_t)temp;
             //printf("%d %d %d %d\n", gray, redB[i], greenB[i], blueB[i]);
             fwrite(&gray, sizeof gray, 1, fp);
@@ -213,8 +219,16 @@ char * dec_bin (int x)
     return result;
 }
 
+uint8_t eval_value (uint8_t color_value, uint8_t temp)
+{
+    //if (color_value%2==0 && temp ==0); //nic nie robimy
+    if (color_value%2==0 && temp == 1) color_value+=1;
+    else if (color_value%2==1 && temp == 0) color_value-=1;
+    //if (color_value%2==1 && temp == 1); //nic nie robimy
+    return color_value;
+}
 
-void steganography_lsb(char * text, int * redB, int * greenB, int * blueB, char * filename, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
+void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
 {
     int x = strlen(text);
     char * initial = dec_bin(x); //free!, fully prepared
@@ -261,38 +275,38 @@ void steganography_lsb(char * text, int * redB, int * greenB, int * blueB, char 
     uint8_t temp;
 
     for (int j = 0; j < ih->biHeight; j++) {
-        for (int i = 0; i < ih->biWidth; i ++) {
+        for (int i = 0; i < ih->biWidth; i++) {
             if (!digit_encoded || !text_encoded){
                 if(!digit_encoded) //encoding a digit
                 {
                     //RED
-                    temp = redB[k]+(initial[init_pom]-'0');
+                    temp = eval_value(ImgCol->RED[k], initial[init_pom]-'0');
                     fwrite(&temp, sizeof (uint8_t), 1, fp);
                     init_pom++;
 
                     //GREEN
                     if (init_pom != 8)
                     {
-                        temp = greenB[k]+(initial[init_pom]-'0');
+                        temp = eval_value(ImgCol->GREEN[k], initial[init_pom]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         init_pom++;
                     }
                     else
                     {
-                        temp = greenB[k]+(bin_text[encoded]-'0');
+                        temp = eval_value(ImgCol->GREEN[k], bin_text[encoded]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         encoded++;
                     }
                     //BLUE
                     if (init_pom != 8)
                     {
-                        temp = greenB[k]+(initial[init_pom]-'0');
+                        temp = eval_value(ImgCol->BLUE[k], initial[init_pom]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         init_pom++;
                     }
                     else
                     {
-                        temp = blueB[k]+(bin_text[encoded]-'0');
+                        temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         encoded++;
                     }
@@ -301,35 +315,35 @@ void steganography_lsb(char * text, int * redB, int * greenB, int * blueB, char 
                 }
                 else{ //encoding a message
                     //RED
-                    temp = redB[k]+(bin_text[encoded]-'0');
+                    temp = eval_value(ImgCol->RED[k], bin_text[encoded]-'0');
                     fwrite(&temp, sizeof (uint8_t), 1, fp);
                     encoded++;
 
                     //GREEN
                     if (encoded != bin_len)
                     {
-                        temp = greenB[k]+(bin_text[encoded]-'0');
+                        temp = eval_value(ImgCol->GREEN[k], bin_text[encoded]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         encoded++;
                     }
-                    else fwrite(&greenB[k], sizeof (uint8_t), 1, fp);
+                    else fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
 
                     //BLUE
                     if (encoded != bin_len)
                     {
-                        temp = blueB[k]+(bin_text[encoded]-'0');
+                        temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
                         fwrite(&temp, sizeof (uint8_t), 1, fp);
                         encoded++;
                     }
-                    else fwrite(&blueB[k], sizeof (uint8_t), 1, fp);
+                    else fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
 
                     if (encoded == bin_len) text_encoded = true;
                 }
             }
             else{
-                fwrite(&redB[k], sizeof (uint8_t), 1, fp);
-                fwrite(&greenB[k], sizeof (uint8_t), 1, fp);
-                fwrite(&blueB[k], sizeof (uint8_t), 1, fp);
+                fwrite(&(ImgCol->RED[k]), sizeof (uint8_t), 1, fp);
+                fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
+                fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
             }
             k++;
         }
