@@ -258,7 +258,7 @@ uint8_t eval_value (uint8_t color_value, uint8_t temp)
     return color_value;
 }
 
-void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
+void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
 {
     int x = strlen(text);
     char * only_number = dec_bin(x); //freed, fully prepared
@@ -272,7 +272,7 @@ void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEAD
     //printf("string to encode:\n<%s>\n", bin_text);
     //printf("number of characters (+1 bo strlen musi tez byc encoded): %d\n", bin_len);
 
-    FILE* fp = fopen("test_lsb.bmp", "wb");
+    FILE* fp = fopen(fileout, "wb");
     if (!fp) {
         perror("File opening failed");
         return EXIT_FAILURE;
@@ -344,9 +344,9 @@ void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEAD
     fclose(fp);
 }
 
-void decode ()
+void decode (char * filename)
 {
-    FILE* fp = fopen("test_lsb.bmp", "rb");
+    FILE* fp = fopen(filename, "rb");
     if (!fp) {
         perror("File opening failed");
         return EXIT_FAILURE;
