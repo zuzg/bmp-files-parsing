@@ -219,6 +219,36 @@ char * dec_bin (int x)
     return result;
 }
 
+int bin_dec (char * s)
+{
+    int x = 1;
+    int res = 0;
+    for (int i = 0; i < strlen(s); i++)
+    {
+        res += (s[i]-'0')*x;
+        x *= 2;
+    }
+    return res;
+}
+
+char * concatenate(char * s1, char * s2) {
+
+   char * result = malloc(strlen(s1)+strlen(s2)+1); //*sizeof char so in fact *1
+   int x=0, y=0;
+   while (s1[x] != '\0') {
+      result[x]=s1[x];
+      x++;
+   }
+
+   while (s2[y] != '\0') {
+      result[x] = s2[y];
+      x++;
+      y++;
+   }
+   result[x] = '\0';
+   return result;
+}
+
 uint8_t eval_value (uint8_t color_value, uint8_t temp)
 {
     //if (color_value%2==0 && temp ==0); //nic nie robimy
@@ -231,15 +261,18 @@ uint8_t eval_value (uint8_t color_value, uint8_t temp)
 void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
 {
     int x = strlen(text);
-    char * initial = dec_bin(x); //free!, fully prepared
-    char * bin_text = string_to_binary(text); //free!, fully prepared
+    char * only_number = dec_bin(x); //freed, fully prepared
+    char * only_text = string_to_binary(text); //freed, fully prepared
+    char * bin_text = concatenate(only_number, only_text);
+
+    free(only_number);
+    free(only_text);
+
     int bin_len = strlen(bin_text);
+    //printf("string to encode:\n<%s>\n", bin_text);
+    //printf("number of characters (+1 bo strlen musi tez byc encoded): %d\n", bin_len);
 
-    printf("<%s>\n", initial);
-    printf("<%s>\n", bin_text);
-    printf("<%d>\n", bin_len);
-
-    FILE* fp = fopen("LSB_img.bmp", "wb");
+    FILE* fp = fopen("test_lsb.bmp", "wb");
     if (!fp) {
         perror("File opening failed");
         return EXIT_FAILURE;
@@ -268,78 +301,38 @@ void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEAD
 
     int init_pom = 0;
     int encoded = 0;
-
-    bool digit_encoded = false;
     bool text_encoded = false;
 
     uint8_t temp;
 
     for (int j = 0; j < ih->biHeight; j++) {
         for (int i = 0; i < ih->biWidth; i++) {
-            if (!digit_encoded || !text_encoded){
-                if(!digit_encoded) //encoding a digit
+            if (!text_encoded){
+                //RED
+                temp = eval_value(ImgCol->RED[k], bin_text[encoded]-'0');
+                fwrite(&temp, sizeof (uint8_t), 1, fp);
+                encoded++;
+
+                //GREEN
+                if (encoded != bin_len)
                 {
-                    //RED
-                    temp = eval_value(ImgCol->RED[k], initial[init_pom]-'0');
-                    fwrite(&temp, sizeof (uint8_t), 1, fp);
-                    init_pom++;
-
-                    //GREEN
-                    if (init_pom != 8)
-                    {
-                        temp = eval_value(ImgCol->GREEN[k], initial[init_pom]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        init_pom++;
-                    }
-                    else
-                    {
-                        temp = eval_value(ImgCol->GREEN[k], bin_text[encoded]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        encoded++;
-                    }
-                    //BLUE
-                    if (init_pom != 8)
-                    {
-                        temp = eval_value(ImgCol->BLUE[k], initial[init_pom]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        init_pom++;
-                    }
-                    else
-                    {
-                        temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        encoded++;
-                    }
-
-                    if (init_pom == 8) digit_encoded = true;
-                }
-                else{ //encoding a message
-                    //RED
-                    temp = eval_value(ImgCol->RED[k], bin_text[encoded]-'0');
+                    temp = eval_value(ImgCol->GREEN[k], bin_text[encoded]-'0');
                     fwrite(&temp, sizeof (uint8_t), 1, fp);
                     encoded++;
-
-                    //GREEN
-                    if (encoded != bin_len)
-                    {
-                        temp = eval_value(ImgCol->GREEN[k], bin_text[encoded]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        encoded++;
-                    }
-                    else fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
-
-                    //BLUE
-                    if (encoded != bin_len)
-                    {
-                        temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
-                        fwrite(&temp, sizeof (uint8_t), 1, fp);
-                        encoded++;
-                    }
-                    else fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
-
-                    if (encoded == bin_len) text_encoded = true;
                 }
-            }
+                else fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
+
+                //BLUE
+                if (encoded != bin_len)
+                {
+                    temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
+                    fwrite(&temp, sizeof (uint8_t), 1, fp);
+                    encoded++;
+                }
+                else fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
+
+                if (encoded == bin_len) text_encoded = true;
+                }
             else{
                 fwrite(&(ImgCol->RED[k]), sizeof (uint8_t), 1, fp);
                 fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
@@ -348,5 +341,62 @@ void steganography(char * text, char * filename, COLORS * ImgCol, BITMAPFILEHEAD
             k++;
         }
     }
+    fclose(fp);
+}
+
+void decode ()
+{
+    FILE* fp = fopen("test_lsb.bmp", "rb");
+    if (!fp) {
+        perror("File opening failed");
+        return EXIT_FAILURE;
+    }
+    BITMAPFILEHEADER fh;
+    readfile(&fh, fp);
+
+    BITMAPINFOHEADER ih;
+    readinfo(&ih, fp);
+
+    int offset_size = fh.bfOffBits-14-sizeof(BITMAPINFOHEADER);
+    uint8_t * offset = (uint8_t *)calloc(offset_size, sizeof(uint8_t)); //freed
+    fread(offset,sizeof(uint8_t),offset_size,fp);
+    free(offset);
+
+    uint8_t temp;
+
+    char * bin_val = malloc(8+1); //freed
+    bin_val[0]='\0';
+
+    for (int x=0; x<8; x++) //reading how many chars will be to decode
+    {
+        fread(&temp, sizeof temp, 1, fp);
+        if (temp%2==0) strcat(bin_val, "0");
+        else strcat(bin_val, "1");
+    }
+    //printf("bin_val: %s\n", bin_val);
+    int val = bin_dec(bin_val);
+    //printf("val: %d\n", val);
+    free(bin_val);
+
+    char * text = malloc(val+1); //freed
+    text[0]='\0';
+
+    for (int i=0; i<val; i++)
+    {
+        char * bin_ch = malloc(8+1); //freed
+        bin_ch[0]='\0';
+        for (int j=0; j<8; j++)
+        {
+            fread(&temp, sizeof temp, 1, fp);
+            if (temp%2==0) strcat(bin_ch, "0");
+            else strcat(bin_ch, "1");
+        }
+        //printf("%s\n", bin_ch);
+        text[i] = (char)(bin_dec(bin_ch));
+        free(bin_ch);
+    }
+    text[val]='\0';
+    printf("DECODED TEXT: %s\n", text);
+    free(text);
     fclose(fp);
 }
