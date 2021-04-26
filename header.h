@@ -98,7 +98,7 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
 
     //
     for (int j = 0; j < ih->biHeight; j++) {
-        for (int i = 0; i < rowlength; i += 3) {
+        for (int i = 0; i < ih->biWidth; i += 3) {
             fread(&r, sizeof r, 1, fp);
             fread(&g, sizeof g, 1, fp);
             fread(&b, sizeof b, 1, fp);
@@ -115,6 +115,12 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
             green[g / 16]++;
             blue[b / 16]++;
         }
+        if (rowlength > ih->biWidth*3) //PADDING!
+        {
+            uint8_t temp;
+            for (int x=0; x < rowlength - ih->biWidth*3; x++)
+                fread(&temp, sizeof temp, 1, fp);
+        }
     }
     printf("\nRED\n");
     printhistogram(red, ih->biHeight * ih->biWidth);
@@ -122,7 +128,7 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
     printhistogram(green, ih->biHeight * ih->biWidth);
     printf("\nBLUE\n");
     printhistogram(blue, ih->biHeight * ih->biWidth);
-    fclose(fp);
+    //fclose(fp);
 
 }
 
@@ -130,7 +136,7 @@ void tograyscale(COLORS * ImgCol, char* filename, BITMAPFILEHEADER* fh, BITMAPIN
     FILE* fp = fopen(filename, "wb");
     if (!fp) {
         perror("File opening failed");
-        return EXIT_FAILURE;
+        return ;
     }
 
     fwrite(&fh->bfType, sizeof fh->bfType, 1, fp);
@@ -166,18 +172,25 @@ void tograyscale(COLORS * ImgCol, char* filename, BITMAPFILEHEADER* fh, BITMAPIN
             fwrite(&gray, sizeof gray, 1, fp);
             k++;
         }
+        if (rowlength > ih->biWidth*3) //PADDING!
+        {
+            uint8_t temp = 0;
+            for (int x=0; x< rowlength - ih->biWidth*3; x++)
+                fwrite(&temp, sizeof temp, 1, fp);
+        }
+
     }
     fclose(fp);
 }
 
 char * string_to_binary(char* line) {
     if(line == NULL) return NULL;
-    size_t len = strlen(line);
+    int len = strlen(line);
     char * binary = malloc(len*8 + 1);
     char * result = malloc(len*8 + 1);
 
     binary[0] = '\0';
-    for(size_t i = 0; i < len; i++) {
+    for(int i = 0; i < len; i++) {
         char temp = line[i];
         for(int j = 7; j >= 0; j--){ //obczaic
             if(temp & (1 << j)) {
@@ -196,7 +209,7 @@ char * string_to_binary(char* line) {
         }
     }
     free(binary);
-    return result; //string przygotowany do bezposredniego wprowadzenia (na odwrot)
+    return result;
 }
 
 char * dec_bin (int x)
@@ -223,30 +236,13 @@ int bin_dec (char * s)
 {
     int x = 1;
     int res = 0;
-    for (int i = 0; i < strlen(s); i++)
+    int temp = strlen(s);
+    for (int i = 0; i < temp; i++)
     {
         res += (s[i]-'0')*x;
         x *= 2;
     }
     return res;
-}
-
-char * concatenate(char * s1, char * s2) {
-
-   char * result = malloc(strlen(s1)+strlen(s2)+1); //*sizeof char so in fact *1
-   int x=0, y=0;
-   while (s1[x] != '\0') {
-      result[x]=s1[x];
-      x++;
-   }
-
-   while (s2[y] != '\0') {
-      result[x] = s2[y];
-      x++;
-      y++;
-   }
-   result[x] = '\0';
-   return result;
 }
 
 uint8_t eval_value (uint8_t color_value, uint8_t temp)
@@ -258,12 +254,16 @@ uint8_t eval_value (uint8_t color_value, uint8_t temp)
     return color_value;
 }
 
-void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, uint8_t * offset)
+void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, int rowlength,  uint8_t * offset)
 {
     int x = strlen(text);
     char * only_number = dec_bin(x); //freed, fully prepared
     char * only_text = string_to_binary(text); //freed, fully prepared
-    char * bin_text = concatenate(only_number, only_text);
+
+    char * bin_text = malloc(strlen(text)*8+8+1);
+    bin_text[0]='\0';
+    strcat(bin_text,only_number);
+    strcat(bin_text,only_text);
 
     free(only_number);
     free(only_text);
@@ -275,7 +275,7 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
     FILE* fp = fopen(fileout, "wb");
     if (!fp) {
         perror("File opening failed");
-        return EXIT_FAILURE;
+        return ;
     }
 
     fwrite(&fh->bfType, sizeof fh->bfType, 1, fp);
@@ -298,8 +298,6 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
     fwrite(offset,sizeof(uint8_t),fh->bfOffBits-14-sizeof(BITMAPINFOHEADER), fp);
 
     int k = 0;
-
-    int init_pom = 0;
     int encoded = 0;
     bool text_encoded = false;
 
@@ -340,7 +338,15 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
             }
             k++;
         }
+        if (rowlength > ih->biWidth*3) //PADDING!
+        {
+            uint8_t temp =0;
+            for (int x=0; x< rowlength-ih->biWidth*3; x++)
+                fwrite(&temp, sizeof temp, 1, fp);
+        }
+
     }
+    free(bin_text);
     fclose(fp);
 }
 
@@ -349,7 +355,7 @@ void decode (char * filename)
     FILE* fp = fopen(filename, "rb");
     if (!fp) {
         perror("File opening failed");
-        return EXIT_FAILURE;
+        return ;
     }
     BITMAPFILEHEADER fh;
     readfile(&fh, fp);
@@ -361,6 +367,7 @@ void decode (char * filename)
     uint8_t * offset = (uint8_t *)calloc(offset_size, sizeof(uint8_t)); //freed
     fread(offset,sizeof(uint8_t),offset_size,fp);
     free(offset);
+    int rowlength = floor((ih.biBitCount * ih.biWidth + 31) / 32) * 4;
 
     uint8_t temp;
 
@@ -380,6 +387,7 @@ void decode (char * filename)
 
     char * text = malloc(val+1); //freed
     text[0]='\0';
+    int counter = 8;
 
     for (int i=0; i<val; i++)
     {
@@ -390,6 +398,15 @@ void decode (char * filename)
             fread(&temp, sizeof temp, 1, fp);
             if (temp%2==0) strcat(bin_ch, "0");
             else strcat(bin_ch, "1");
+
+            counter++; //PADDING!
+            if (counter==ih.biWidth*3 && rowlength > ih.biWidth*3)
+            {
+                uint8_t pom;
+                for (int x=0; x< rowlength - ih.biWidth*3; x++)
+                    fread(&pom, sizeof pom, 1, fp);
+                counter=0;
+            }
         }
         //printf("%s\n", bin_ch);
         text[i] = (char)(bin_dec(bin_ch));
