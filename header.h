@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #pragma warning(disable:4996)
 
+// Agata Zywot 148258
+// Zuzanna Gawrysiak 148255
+
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef int32_t LONG;
@@ -98,14 +101,14 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
 
     for (int j = 0; j < ih->biHeight; j++) {
         for (int i = 0; i < ih->biWidth; i++) {
-            fread(&r, sizeof r, 1, fp);
+            fread(&b, sizeof r, 1, fp);
             fread(&g, sizeof g, 1, fp);
-            fread(&b, sizeof b, 1, fp);
+            fread(&r, sizeof b, 1, fp);
 
             //printf("%u %u %u ", r, g, b);
-            ImgCol->RED[k] = r;
+            ImgCol->RED[k] = b;
             ImgCol->GREEN[k] = g;
-            ImgCol->BLUE[k] = b;
+            ImgCol->BLUE[k] = r;
             //printf("%d %d %d\n", r, g, b);
             //printf("%d %d %d\n", redB[k], greenB[k], blueB[k]);
             k++;
@@ -288,8 +291,8 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
     for (int j = 0; j < ih->biHeight; j++) {
         for (int i = 0; i < ih->biWidth; i++) {
             if (!text_encoded){
-                //RED
-                temp = eval_value(ImgCol->RED[k], bin_text[encoded]-'0');
+                //BLUE
+                temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
                 fwrite(&temp, sizeof (uint8_t), 1, fp);
                 encoded++;
 
@@ -302,21 +305,21 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
                 }
                 else fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
 
-                //BLUE
+                //RED
                 if (encoded != bin_len)
                 {
-                    temp = eval_value(ImgCol->BLUE[k], bin_text[encoded]-'0');
+                    temp = eval_value(ImgCol->RED[k], bin_text[encoded]-'0');
                     fwrite(&temp, sizeof (uint8_t), 1, fp);
                     encoded++;
                 }
-                else fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
+                else fwrite(&(ImgCol->RED[k]), sizeof (uint8_t), 1, fp);
 
                 if (encoded == bin_len) text_encoded = true;
                 }
             else{
-                fwrite(&(ImgCol->RED[k]), sizeof (uint8_t), 1, fp);
-                fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
                 fwrite(&(ImgCol->BLUE[k]), sizeof (uint8_t), 1, fp);
+                fwrite(&(ImgCol->GREEN[k]), sizeof (uint8_t), 1, fp);
+                fwrite(&(ImgCol->RED[k]), sizeof (uint8_t), 1, fp);
             }
             k++;
         }
