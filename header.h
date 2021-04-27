@@ -98,7 +98,7 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
 
     //
     for (int j = 0; j < ih->biHeight; j++) {
-        for (int i = 0; i < ih->biWidth; i += 3) {
+        for (int i = 0; i < ih->biWidth; i ++) {
             fread(&r, sizeof r, 1, fp);
             fread(&g, sizeof g, 1, fp);
             fread(&b, sizeof b, 1, fp);
