@@ -98,7 +98,7 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
 
     //
     for (int j = 0; j < ih->biHeight; j++) {
-        for (int i = 0; i < ih->biWidth; i ++) {
+        for (int i = 0; i < ih->biWidth; i++) {
             fread(&r, sizeof r, 1, fp);
             fread(&g, sizeof g, 1, fp);
             fread(&b, sizeof b, 1, fp);
@@ -119,6 +119,8 @@ void histogram(COLORS * ImgCol, FILE* fp, BITMAPFILEHEADER* fh, BITMAPINFOHEADER
         {
             uint8_t temp;
             for (int x=0; x < rowlength - ih->biWidth*3; x++)
+                fread(&temp, sizeof temp, 1, fp);
+                fread(&temp, sizeof temp, 1, fp);
                 fread(&temp, sizeof temp, 1, fp);
         }
     }
@@ -163,7 +165,7 @@ void tograyscale(COLORS * ImgCol, char* filename, BITMAPFILEHEADER* fh, BITMAPIN
     int k = 0;
 
     for (int j = 0; j < ih->biHeight; j++) {
-        for (int i = 0; i < ih->biWidth; i ++) {
+        for (int i = 0; i < ih->biWidth; i++) {
             gray = (ImgCol->RED[k] + ImgCol->GREEN[k] + ImgCol->BLUE[k]) / 3;
             //gray = (uint8_t)temp;
             //printf("%d %d %d %d\n", gray, redB[i], greenB[i], blueB[i]);
@@ -177,6 +179,8 @@ void tograyscale(COLORS * ImgCol, char* filename, BITMAPFILEHEADER* fh, BITMAPIN
             uint8_t temp = 0;
             for (int x=0; x< rowlength - ih->biWidth*3; x++)
                 fwrite(&temp, sizeof temp, 1, fp);
+                fwrite(&temp, sizeof temp, 1, fp);
+                fwrite(&temp, sizeof temp, 1, fp);
         }
 
     }
@@ -187,47 +191,28 @@ char * string_to_binary(char* line) {
     if(line == NULL) return NULL;
     int len = strlen(line);
     char * binary = malloc(len*8 + 1);
-    char * result = malloc(len*8 + 1);
 
     binary[0] = '\0';
     for(int i = 0; i < len; i++) {
-        char temp = line[i];
-        for(int j = 7; j >= 0; j--){ //obczaic
-            if(temp & (1 << j)) {
-                strcat(binary,"1");
-            } else {
-                strcat(binary,"0");
-            }
+        int temp = (int)line[i];
+        for(int j = 0; j <8; j++){
+            if(temp%2==1) strcat(binary,"1");
+            else strcat(binary,"0");
+            temp/=2;
         }
     }
-    //further string prep
-    for (int i=0; i<len; i++)
-    {
-        for (int j=0; j<8; j++)
-        {
-            result[8*i+j]=binary[8*i+8-1-j];
-        }
-    }
-    free(binary);
-    return result;
+    return binary;
 }
 
 char * dec_bin (int x)
 {
-    char * result = malloc(8 + 1); //+1 bc of '\0'
-    int counter = 0;
+    char * result = malloc(8 + 1);
     result[0] = '\0';
-    while (x!=0)
+     for(int x = 0; x <8; x++)
     {
         if (x%2==0) strcat(result, "0");
         else strcat(result, "1");
         x/=2;
-        counter++;
-    }
-    while (counter != 8)
-    {
-        strcat(result, "0");
-        counter++;
     }
     return result;
 }
@@ -254,19 +239,17 @@ uint8_t eval_value (uint8_t color_value, uint8_t temp)
     return color_value;
 }
 
+
 void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADER * fh, BITMAPINFOHEADER * ih, int rowlength,  uint8_t * offset)
 {
     int x = strlen(text);
-    char * only_number = dec_bin(x); //freed, fully prepared
-    char * only_text = string_to_binary(text); //freed, fully prepared
+    char * only_number = dec_bin(x); //freed
+    char * only_text = string_to_binary(text); //freed
 
-    char * bin_text = malloc(strlen(text)*8+8+1);
+    char * bin_text = malloc((x*8+8+1)*sizeof(char)); //freed
     bin_text[0]='\0';
     strcat(bin_text,only_number);
     strcat(bin_text,only_text);
-
-    free(only_number);
-    free(only_text);
 
     int bin_len = strlen(bin_text);
     //printf("string to encode:\n<%s>\n", bin_text);
@@ -343,9 +326,14 @@ void steganography(char * text, char * fileout, COLORS * ImgCol, BITMAPFILEHEADE
             uint8_t temp =0;
             for (int x=0; x< rowlength-ih->biWidth*3; x++)
                 fwrite(&temp, sizeof temp, 1, fp);
+                fwrite(&temp, sizeof temp, 1, fp);
+                fwrite(&temp, sizeof temp, 1, fp);
         }
 
     }
+
+    free(only_number);
+    free(only_text);
     free(bin_text);
     fclose(fp);
 }
