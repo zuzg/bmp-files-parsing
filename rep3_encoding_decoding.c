@@ -1,25 +1,19 @@
 #include "header.h"
 
-///to wrzucamy zeby dzialalo w linuxie, roboczo do testow zostawilam chara
+///nie umiem zrobic zeby spacje dzialaly xd w sensie "bla bla bla" jest jako "blablabla"
 
-/*
 int main(int argc, char **argv) {
+    char * filename = argv[1];
+    char * fileout = argv[2];
+    char * hidetext = argv[3];
 
-    char * filename = strtok(argv[1], " ");
-    char * fileout = strtok(NULL, " ");
-    char * hidetext = strtok(NULL, " ");
-*/
-///dalam ify zeby w zaleznosci od inputu robilo rozne rzeczy, generalnie jak ogarniemy strtoka to bedzie git
-
-int main() {
-    //idk o co chodzi
-    char argg[] = "tux.bmp output.bmp eluwina";
-    //printf("%s\n", argg);
-
-    char * filename = strtok(argg, " ");
-    char * fileout = strtok(NULL, " ");
-    char * hidetext = strtok(NULL, " ");
-
+    int i = 4;
+    while(argv[i] != NULL){
+    	strcat(hidetext, argv[i]);
+    	//strcat(hidetext, " ");
+    	i++;
+    }
+    //reszta bez zmian
     printf("%s %s %s\n", filename, fileout, hidetext);
 
     FILE* fp = fopen(filename, "rb");
