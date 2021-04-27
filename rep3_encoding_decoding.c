@@ -1,19 +1,24 @@
 #include "header.h"
 
 ///nie umiem zrobic zeby spacje dzialaly xd w sensie "bla bla bla" jest jako "blablabla"
+//aktualny stan: gubi 2. slowo i dodaje spacje za duzo
 
 int main(int argc, char **argv) {
-    char * filename = argv[1];
-    char * fileout = argv[2];
-    char * hidetext = argv[3];
+    char *filename = argv[1];
+    char *fileout = argv[2];
+    char *hidetext = (char*)malloc(255*sizeof(char));
+    hidetext = argv[3];
+    //strcat(hidetext, " ");
 
-    int i = 4;
-    while(argv[i] != NULL){
-    	strcat(hidetext, argv[i]);
-    	//strcat(hidetext, " ");
-    	i++;
+    if(hidetext != NULL){
+	    int i = 4;
+	    while(argv[i] != NULL){
+	    	//char * word = argv[i];
+	    	strcat(hidetext, " ");//bez tej linijki jest cale haslo bez spacji
+	    	strcat(hidetext, argv[i]);
+	    	i++;
+	    }
     }
-    //reszta bez zmian
     printf("%s %s %s\n", filename, fileout, hidetext);
 
     FILE* fp = fopen(filename, "rb");
